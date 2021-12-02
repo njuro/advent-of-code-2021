@@ -3,8 +3,8 @@ import utils.readInputLines
 /** [https://adventofcode.com/2021/day/2] */
 class Commands : AdventOfCodeTask {
     override fun run(part2: Boolean): Any {
-        var (depth, position, aim) = listOf(0, 0, 0)
-        readInputLines("2.txt").forEach { line ->
+        return readInputLines("2.txt").fold(Triple(0, 0, 0)) { data, line ->
+            var (position, depth, aim) = data
             val (command, value) = line.split(" ")
             with(value.toInt()) {
                 when (command) {
@@ -16,9 +16,8 @@ class Commands : AdventOfCodeTask {
                     "down" -> if (part2) aim += this else depth += this
                 }
             }
-        }
-
-        return depth * position
+            Triple(position, depth, aim)
+        }.let { it.first * it.second }
     }
 }
 
