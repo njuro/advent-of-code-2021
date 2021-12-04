@@ -7,10 +7,10 @@ private typealias Board = List<List<Int>>
 class Bingo : AdventOfCodeTask {
 
     override fun run(part2: Boolean): Any {
-        val input = readInputBlock("4.txt")
-        val pool = input.split("\n").first().split(",").map(String::toInt).toMutableList()
-        val boards: MutableSet<Board> = input.split("\n\n").drop(1).map { block ->
-            block.split("\n").map { row ->
+        val input = readInputBlock("4.txt").split("\n\n")
+        val pool = input.first().split(",").map(String::toInt).toMutableList()
+        val boards: MutableSet<Board> = input.drop(1).map { board ->
+            board.split("\n").map { row ->
                 row.trim().split(Pattern.compile("\\s+")).map(String::toInt)
             }
         }.toMutableSet()
