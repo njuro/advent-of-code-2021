@@ -12,8 +12,8 @@ class Basins : AdventOfCodeTask {
         }
 
         return if (part2)
-            lowPoints.map {
-                val queue = mutableListOf(it)
+            lowPoints.map { start ->
+                val queue = mutableListOf(start)
                 val basin = mutableSetOf<Coordinate>()
 
                 while (queue.isNotEmpty()) {
