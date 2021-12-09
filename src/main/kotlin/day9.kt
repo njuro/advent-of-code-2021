@@ -5,10 +5,10 @@ import utils.readInputLines
 class Basins : AdventOfCodeTask {
     override fun run(part2: Boolean): Any {
         val heights = readInputLines("9.txt").flatMapIndexed { y, row ->
-            row.mapIndexed { x, c -> Coordinate(x, y) to Character.getNumericValue(c) }
+            row.mapIndexed { x, c -> Coordinate(x, y) to c.digitToInt() }
         }.toMap().withDefault { 10 }
-        val lowPoints = heights.keys.filter {
-            it.adjacent().values.all { n -> heights.getValue(n) > heights.getValue(it) }
+        val lowPoints = heights.keys.filter { point ->
+            point.adjacent().values.all { heights.getValue(it) > heights.getValue(point) }
         }
 
         return if (part2)
@@ -23,7 +23,7 @@ class Basins : AdventOfCodeTask {
                 }
 
                 basin.size
-            }.sortedByDescending { it }.take(3).reduce { a, b -> a * b }
+            }.sortedDescending().take(3).reduce { a, b -> a * b }
         else
             lowPoints.sumOf { heights.getValue(it) + 1 }
     }
