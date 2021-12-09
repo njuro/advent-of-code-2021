@@ -15,8 +15,7 @@ class Basins : AdventOfCodeTask {
             while (queue.isNotEmpty()) {
                 val current = queue.removeFirst()
                 basin.add(current)
-                val heightRange = heights.getValue(current) until 9
-                queue.addAll(current.adjacent().values.filter { it !in basin && heights.getValue(it) in heightRange })
+                queue.addAll(current.adjacent().values.filter { it !in basin && heights.getValue(it) < 9 })
             }
 
             return basin.size
