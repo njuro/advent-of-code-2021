@@ -7,26 +7,23 @@ class Basins : AdventOfCodeTask {
         val heights = readInputLines("9.txt").flatMapIndexed { y, row ->
             row.mapIndexed { x, c -> Coordinate(x, y) to Character.getNumericValue(c) }
         }.toMap().withDefault { 10 }
-
-        fun findBasin(start: Coordinate): Int {
-            val queue = mutableListOf(start)
-            val basin = mutableSetOf<Coordinate>()
-
-            while (queue.isNotEmpty()) {
-                val current = queue.removeFirst()
-                basin.add(current)
-                queue.addAll(current.adjacent().values.filter { it !in basin && heights.getValue(it) < 9 })
-            }
-
-            return basin.size
-        }
-
         val lowPoints = heights.keys.filter {
             it.adjacent().values.all { n -> heights.getValue(n) > heights.getValue(it) }
         }
 
         return if (part2)
-            lowPoints.map(::findBasin).sortedByDescending { it }.take(3).reduce { a, b -> a * b }
+            lowPoints.map {
+                val queue = mutableListOf(it)
+                val basin = mutableSetOf<Coordinate>()
+
+                while (queue.isNotEmpty()) {
+                    val current = queue.removeFirst()
+                    basin.add(current)
+                    queue.addAll(current.adjacent().values.filter { it !in basin && heights.getValue(it) < 9 })
+                }
+
+                basin.size
+            }.sortedByDescending { it }.take(3).reduce { a, b -> a * b }
         else
             lowPoints.sumOf { heights.getValue(it) + 1 }
     }
