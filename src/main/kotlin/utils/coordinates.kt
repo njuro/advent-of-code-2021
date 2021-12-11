@@ -52,6 +52,13 @@ data class Coordinate(val x: Int, val y: Int) {
         return Direction.values().associateWith { move(it, offset) }
     }
 
+    fun adjacent8() = adjacent().values + setOf(
+        copy(x = x + 1, y = y + 1),
+        copy(x = x - 1, y = y - 1),
+        copy(x = x - 1, y = y + 1),
+        copy(x = x + 1, y = y - 1)
+    )
+
     operator fun plus(other: Coordinate): Coordinate {
         return Coordinate(x + other.x, y + other.y)
     }
