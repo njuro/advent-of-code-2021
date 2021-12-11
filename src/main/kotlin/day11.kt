@@ -10,19 +10,19 @@ class Octopuses : AdventOfCodeTask {
 
         var flashes = 0
         var rounds = 0
-        while ((part2 && octopuses.values.any { it != 0 }) || rounds < 100) {
-            rounds++
-            octopuses.keys.forEach { octopuses[it] = octopuses[it]!! + 1 }
-            while (octopuses.values.any { it == 10 }) {
-                octopuses.filter { it.value == 10 }.keys.forEach { full ->
-                    flashes++
-                    full.adjacent8()
-                        .filter { octopuses.getValue(it) in 0..9 }
-                        .forEach { octopuses[it] = octopuses[it]!! + 1 }
-                    octopuses[full] = octopuses[full]!! + 1
+        with(octopuses) {
+            while ((part2 && values.any { it != 0 }) || rounds < 100) {
+                rounds++
+                keys.forEach { set(it, getValue(it) + 1) }
+                while (values.any { it == 10 }) {
+                    filterValues { it == 10 }.keys.forEach { full ->
+                        flashes++
+                        full.adjacent8().filter { getValue(it) in 0..9 }.forEach { set(it, getValue(it) + 1) }
+                        set(full, getValue(full) + 1)
+                    }
                 }
+                filterValues { it > 9 }.keys.forEach { set(it, 0) }
             }
-            octopuses.filter { it.value > 9 }.keys.forEach { octopuses[it] = 0 }
         }
 
         return if (part2) rounds else flashes
