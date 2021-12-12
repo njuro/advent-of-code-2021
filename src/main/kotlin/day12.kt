@@ -14,7 +14,7 @@ class Paths : AdventOfCodeTask {
             }
 
             return if (part2) {
-                val hasDoubleVisit = path.filter { it.first().isLowerCase() && it != "start" }
+                val hasDoubleVisit = path.filter { it.first().isLowerCase() }
                     .groupingBy { it }.eachCount().any { it.value == 2 }
                 path.count { it == next } < (if (hasDoubleVisit || next == "start") 1 else 2)
             } else next !in path
