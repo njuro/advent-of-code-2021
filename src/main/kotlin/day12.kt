@@ -8,22 +8,18 @@ class Paths : AdventOfCodeTask {
             setOf(source to target, target to source)
         }
 
-        fun isValidPath(next: String, path: List<String>): Boolean {
-            if (next.first().isUpperCase()) {
-                return true
-            }
+        fun isValidPath(next: String, path: List<String>, hasDoubleVisit: Boolean) =
+            next.first().isUpperCase() ||
+                    path.count { it == next } < (if (!part2 || hasDoubleVisit || next == "start") 1 else 2)
 
-            return if (part2) {
-                val hasDoubleVisit = path.filter { it.first().isLowerCase() }
-                    .groupingBy { it }.eachCount().any { it.value == 2 }
-                path.count { it == next } < (if (hasDoubleVisit || next == "start") 1 else 2)
-            } else next !in path
-        }
+        fun discoverPaths(current: String = "start", path: List<String> = listOf(current)): Set<List<String>> {
+            val hasDoubleVisit = if (part2) path.filter { it.first().isLowerCase() }
+                .groupingBy { it }.eachCount().any { it.value == 2 } else false
 
-        fun discoverPaths(current: String = "start", path: List<String> = listOf(current)): Set<List<String>> =
-            if (current == "end") setOf(path) else
-                tunnels.filter { it.first == current && isValidPath(it.second, path) }
+            return if (current == "end") setOf(path) else
+                tunnels.filter { it.first == current && isValidPath(it.second, path, hasDoubleVisit) }
                     .flatMap { discoverPaths(it.second, path + it.second) }.toSet()
+        }
 
         return discoverPaths().size
     }
