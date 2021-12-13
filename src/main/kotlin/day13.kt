@@ -25,7 +25,7 @@ class Dots : AdventOfCodeTask {
             }
 
         return if (part2)
-            dots.fold(instructions).associateWith { '#' }.withDefault { '.' }
+            dots.fold(instructions).associateWith { '█' }.withDefault { ' ' }
                 .toStringRepresentation(offsetCoordinates = true, separator = "")
         else
             dots.fold(listOf(instructions.first())).size
