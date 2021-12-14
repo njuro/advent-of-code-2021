@@ -21,11 +21,8 @@ class Polymers : AdventOfCodeTask {
         }
 
         val counter = mutableMapOf<Char, Long>().withDefault { 0L }
-        current.forEach { (first, second), count ->
-            counter[first] = counter.getValue(first) + count / 2
-            counter[second] = counter.getValue(second) + count / 2
-        }
-        counter[template.last()] = counter.getValue(template.last()) - 1
+        current.forEach { (first, _), count -> counter[first] = counter.getValue(first) + count }
+        counter[template.last()] = counter.getValue(template.last()) + 1
 
         return counter.values.maxOf { it } - counter.values.minOf { it }
     }
