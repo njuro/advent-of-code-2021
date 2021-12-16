@@ -27,37 +27,39 @@ class Packets : AdventOfCodeTask {
         val message = readInputBlock("16.txt").flatMap {
             it.digitToInt(16).toString(2).padStart(4, '0').toList()
         }
-
         var offset = 0
-        fun List<Char>.consume(length: Int) = subList(offset, offset + length).also { offset += length }
-        fun List<Char>.toInt() = joinToString("").toInt(2)
-        fun List<Char>.toLong() = joinToString("").toLong(2)
 
         fun parse(): Packet {
             var size = 0
-            val version = message.consume(3).toInt().also { size += 3 }
-            val type = message.consume(3).toInt().also { size += 3 }
+            fun List<Char>.consume(length: Int) =
+                subList(offset, offset + length).also { offset += length; size += length }
+
+            fun List<Char>.toInt() = joinToString("").toInt(2)
+            fun List<Char>.toLong() = joinToString("").toLong(2)
+
+            val version = message.consume(3).toInt()
+            val type = message.consume(3).toInt()
 
             if (type == 4) {
                 val digits = mutableListOf<Char>()
                 do {
-                    val group = message.consume(5).also { size += 5 }
+                    val group = message.consume(5)
                     digits.addAll(group.drop(1))
                 } while (group.first() == '1')
 
                 return Packet(version, type, digits.toLong(), size)
             } else {
-                val lengthType = message.consume(1).toInt().also { size += 1 }
+                val lengthType = message.consume(1).toInt()
                 val subPackets = mutableListOf<Packet>()
                 var subPacketsSize = 0
                 if (lengthType == 0) {
-                    val totalLength = message.consume(15).toInt().also { size += 15 }
+                    val totalLength = message.consume(15).toInt()
                     while (subPacketsSize != totalLength) {
                         subPackets.add(parse().also { subPacketsSize += it.size })
                     }
 
                 } else {
-                    val subPacketCount = message.consume(11).toInt().also { size += 11 }
+                    val subPacketCount = message.consume(11).toInt()
                     repeat(subPacketCount) { subPackets.add(parse().also { subPacketsSize += it.size }) }
                 }
                 size += subPacketsSize
