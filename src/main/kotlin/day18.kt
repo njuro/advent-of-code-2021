@@ -75,7 +75,7 @@ class Day18 : AdventOfCodeTask {
 
         abstract fun magnitude(): Long
 
-        fun add(other: SnailFish) = SnailPair(left = this, right = other).reduced().first
+        fun add(other: SnailFish) = SnailPair(left = this, right = other).also { it.populate(null) }.reduced().first
 
 
     }
@@ -119,7 +119,9 @@ class Day18 : AdventOfCodeTask {
                 return SnailPair(
                     SnailLiteral(floor(value / 2.0).toInt()),
                     SnailLiteral(ceil(value / 2.0).toInt())
-                ).apply { this.parent = this@SnailLiteral.parent } to true
+                ).apply {
+                    this.parent = this@SnailLiteral.parent; this.left.parent = this; this.right.parent = this
+                } to true
             }
             return this to false
         }
