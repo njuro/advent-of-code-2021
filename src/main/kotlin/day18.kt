@@ -1,4 +1,6 @@
 import utils.readInputLines
+import kotlin.math.ceil
+import kotlin.math.floor
 
 /** [https://adventofcode.com/2021/day/18] */
 class Day18 : AdventOfCodeTask {
@@ -64,15 +66,78 @@ class Day18 : AdventOfCodeTask {
                 } else left!!
             }
         }
+
+        var parent: SnailFish? = null
+
+        abstract fun populate(newParent: SnailFish?)
+
+        abstract fun reduced(level: Int = 1): Pair<SnailFish, Boolean>
+
+        abstract fun magnitude(): Long
+
+        fun add(other: SnailFish) = SnailPair(left = this, right = other).reduced().first
+
+
     }
 
-    data class SnailPair(val left: SnailFish, val right: SnailFish) : SnailFish()
-    data class SnailLiteral(val value: Int) : SnailFish()
+    data class SnailPair(var left: SnailFish, var right: SnailFish) : SnailFish() {
+        override fun reduced(level: Int): Pair<SnailFish, Boolean> {
+            var current = this
+            while (true) {
+                if (level == 4) {
+
+                    var newParent = parent
+                    return SnailLiteral(0).apply { this.parent = newParent } to true
+                } else {
+                    var newLeft = left.reduced(level + 1)
+                    var newRight = right.reduced(level + 1)
+                    var newParent = parent
+                    current = SnailPair(newLeft.first, newRight.first).apply { this.parent = newParent }
+                    if (!newLeft.second && !newRight.second) {
+                        break
+                    }
+                }
+            }
+
+            return current to false
+        }
+
+        override fun populate(newParent: SnailFish?) {
+            this.parent = newParent
+            left.populate(this)
+            right.populate(this)
+        }
+
+        override fun magnitude(): Long {
+            return 3 * left.magnitude() + 2 * right.magnitude()
+        }
+    }
+
+    data class SnailLiteral(var value: Int) : SnailFish() {
+        override fun reduced(level: Int): Pair<SnailFish, Boolean> {
+            if (value >= 10) {
+                return SnailPair(
+                    SnailLiteral(floor(value / 2.0).toInt()),
+                    SnailLiteral(ceil(value / 2.0).toInt())
+                ).apply { this.parent = this@SnailLiteral.parent } to true
+            }
+            return this to false
+        }
+
+        override fun populate(newParent: SnailFish?) {
+            this.parent = newParent
+        }
+
+        override fun magnitude(): Long {
+            return value.toLong()
+        }
+    }
 
     override fun run(part2: Boolean): Any {
-        val input = readInputLines("18.txt").map { SnailFish.parse(it.toList()) }
+        val input =
+            readInputLines("18.txt").map { SnailFish.parse(it.toList()).also { it.populate(null) }.reduced().first }
 
-        return -1
+        return input.reduce { acc, snailFish -> acc.add(snailFish) }
     }
 }
 
