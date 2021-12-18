@@ -1,247 +1,131 @@
+import kotlinx.serialization.json.*
 import utils.readInputLines
 import kotlin.math.ceil
 import kotlin.math.floor
-import kotlin.math.max
 
 /** [https://adventofcode.com/2021/day/18] */
-class Day18 : AdventOfCodeTask {
+class Snails : AdventOfCodeTask {
+    enum class Side { L, R }
     sealed class SnailFish {
         companion object {
-            fun parse(input: List<Char>): SnailFish {
-                val buffer = mutableListOf<Char>()
-                var index = 0
-                var isLeft = true
-                var left: SnailFish? = null
-                var right: SnailFish? = null
-                while (index < input.size) {
-                    if (input[index] == '[') {
-                        var nesting = 1
-                        var endIndex = index + 1
-                        while (true) {
-                            if (input[endIndex] == '[') {
-                                nesting++
-                            }
-                            if (input[endIndex] == ']') {
-                                nesting--
-                                if (nesting <= 0) {
-                                    break
-                                }
-                            }
-                            endIndex++
-                        }
-                        val sublist = input.subList(index + 1, endIndex + 1)
-                        val subfish = SnailFish.parse(sublist)
-                        if (isLeft) {
-                            left = subfish
-                        } else {
-                            right = subfish
-                        }
-                        index += sublist.size + 1
-                    } else if (input[index].isDigit()) {
-                        buffer.add(input[index])
-                        index++
-                    } else if (input[index] == ',') {
-                        if (left == null && buffer.isNotEmpty()) {
-                            left = SnailLiteral(buffer.joinToString("").toInt())
-                            buffer.clear()
-                        }
-                        isLeft = false
-                        index++
-                    } else if (input[index] == ']') {
-                        if (right == null && buffer.isNotEmpty()) {
-                            right = SnailLiteral(buffer.joinToString("").toInt())
-                            buffer.clear()
-                        }
-                        isLeft = true
-                        index++
-                    }
-                }
+            fun parse(raw: String) = parse(Json.parseToJsonElement(raw))
 
-                if (buffer.isNotEmpty()) {
-                    right = SnailLiteral(buffer.joinToString("").toInt())
-                    buffer.clear()
-                }
-
-                return if (right != null) {
-                    SnailPair(left!!, right)
-                } else left!!
+            private fun parse(input: JsonElement): SnailFish = when (input) {
+                is JsonArray -> SnailPair(parse(input.first()), parse(input.last()))
+                is JsonPrimitive -> SnailLiteral(input.int)
+                else -> throw IllegalArgumentException()
             }
         }
 
         var parent: SnailPair? = null
 
-        abstract fun populate(newParent: SnailPair?)
+        open fun initParent(parent: SnailPair? = null) = run { this.parent = parent }
+        open fun explode(side: Side, level: Int = 1): Boolean = false
+        open fun split(side: Side): Boolean = false
 
-        abstract fun reduced(level: Int, canSplit: Boolean): Pair<SnailFish, Boolean>
-
-        abstract fun explodeLeft(value: Int)
-
-        abstract fun explodeRight(value: Int)
-
-        abstract fun magnitude(): Long
-
-        fun add(other: SnailFish) = SnailPair(left = this, right = other).also { it.populate(null) }.reduced()
-
-
-        fun reduced(): SnailFish {
-            var current = this
-            while (true) {
-//                println(current)
-                val (newValue, wasReduced) = current.reduced(0, false).also { it.first.populate(null) }
-                if (wasReduced) {
-//                    println(newValue)
-//                    println()
-                    current = newValue
-                } else {
-                    val (newValue2, wasReduced2) = current.reduced(0, true).also { it.first.populate(null) }
-                    if (wasReduced2) {
-//                        println(newValue2)
-//                        println()
-                        current = newValue2
-                    } else {
-                        break
-                    }
-                }
-            }
-            return current
-        }
-
+        abstract fun pushLeft(value: Int)
+        abstract fun pushRight(value: Int)
+        abstract fun magnitude(): Int
         abstract fun copy(): SnailFish
     }
 
     data class SnailPair(var left: SnailFish, var right: SnailFish) : SnailFish() {
-        override fun reduced(level: Int, canSplit: Boolean): Pair<SnailFish, Boolean> {
-            if (level == 4) {
-//                println("EXPLODE $this")
-                explodeLeft((this.left as SnailLiteral).value)
-                explodeRight((this.right as SnailLiteral).value)
-                var newParent = parent
-                return SnailLiteral(0).apply { this.parent = newParent } to true
-            } else {
-                var newParent = parent
-                var newLeft = left.reduced(level + 1, canSplit)
-                if (newLeft.second) {
-                    return SnailPair(newLeft.first, right).apply { this.parent = newParent } to true
-                }
-                var newRight = right.reduced(level + 1, canSplit)
-                if (newRight.second) {
-                    return SnailPair(left, newRight.first).apply { this.parent = newParent } to true
-                }
+        operator fun plus(other: SnailFish) = SnailPair(this, other).apply(::initParent).reduced()
 
-                return this to false
+        private fun reduced(): SnailPair {
+            while (left.explode(Side.L) || right.explode(Side.R) || split(Side.L)) {
+                initParent()
             }
+            return this
         }
 
-        override fun explodeLeft(value: Int) {
+        override fun initParent(parent: SnailPair?) = run {
+            this.parent = parent
+            this.left.initParent(this)
+            this.right.initParent(this)
+        }
+
+        override fun explode(side: Side, level: Int): Boolean {
+            if (level == 4) {
+                val reduced = SnailLiteral(0).apply { parent = this@SnailPair.parent }
+                pushLeft((left as SnailLiteral).value)
+                pushRight((right as SnailLiteral).value)
+                if (side == Side.L) parent!!.left = reduced else parent!!.right = reduced
+                return true
+            }
+
+            return left.explode(Side.L, level + 1) || right.explode(Side.R, level + 1)
+        }
+
+        override fun split(side: Side) = left.split(Side.L) || right.split(Side.R)
+
+        override fun pushLeft(value: Int) {
             val current = this.parent ?: return
             if (current.left === this) {
-                current.explodeLeft(value)
+                current.pushLeft(value)
                 return
             }
             if (current.left is SnailPair) {
-                var ok: SnailFish = (current.left as SnailPair).right
-                while (ok is SnailPair) ok = ok.right
-                ok.explodeRight(value)
+                var leaf: SnailFish = (current.left as SnailPair).right
+                while (leaf is SnailPair) leaf = leaf.right
+                leaf.pushRight(value)
                 return
             }
-            current.left.explodeRight(value)
+            current.left.pushRight(value)
         }
 
-        override fun explodeRight(value: Int) {
+        override fun pushRight(value: Int) {
             val current = this.parent ?: return
             if (current.right === this) {
-                current.explodeRight(value)
+                current.pushRight(value)
                 return
             }
             if (current.right is SnailPair) {
-                var ok: SnailFish = (current.right as SnailPair).left
-                while (ok is SnailPair) ok = ok.left
-                ok.explodeLeft(value)
+                var leaf: SnailFish = (current.right as SnailPair).left
+                while (leaf is SnailPair) leaf = leaf.left
+                leaf.pushLeft(value)
                 return
             }
-            current.right.explodeLeft(value)
+            current.right.pushLeft(value)
         }
 
-        override fun populate(newParent: SnailPair?) {
-            this.parent = newParent
-            left.populate(this)
-            right.populate(this)
-        }
-
-        override fun magnitude(): Long {
-            return 3 * left.magnitude() + 2 * right.magnitude()
-        }
-
-        override fun toString(): String {
-            return "[$left,$right]"
-        }
-
-        override fun copy(): SnailFish {
-            return SnailPair(left.copy(), right.copy())
-        }
+        override fun magnitude() = 3 * left.magnitude() + 2 * right.magnitude()
+        override fun copy() = SnailPair(left.copy(), right.copy()).apply(SnailFish::initParent)
+        override fun toString() = "[$left,$right]"
     }
 
     data class SnailLiteral(var value: Int) : SnailFish() {
-        override fun reduced(level: Int, canSplit: Boolean): Pair<SnailFish, Boolean> {
-            if (canSplit && value >= 10) {
-//                println("SPLIT $this")
-                return SnailPair(
+        override fun split(side: Side): Boolean {
+            if (value >= 10) {
+                val reduced = SnailPair(
                     SnailLiteral(floor(value / 2.0).toInt()),
                     SnailLiteral(ceil(value / 2.0).toInt())
-                ).apply {
-                    this.parent = this@SnailLiteral.parent; this.left.parent = this; this.right.parent = this
-                } to true
+                ).apply { parent = this@SnailLiteral.parent; left.parent = this; right.parent = this }
+                if (side == Side.L) parent!!.left = reduced else parent!!.right = reduced
+                return true
             }
-            return this to false
+
+            return false
         }
 
-        override fun explodeLeft(value: Int) {
-            this.value += value
-        }
+        override fun pushLeft(value: Int) = run { this.value += value }
+        override fun pushRight(value: Int) = run { this.value += value }
+        override fun magnitude() = value
+        override fun copy() = SnailLiteral(value)
+        override fun toString() = "$value"
 
-        override fun explodeRight(value: Int) {
-            this.value += value
-        }
-
-        override fun populate(newParent: SnailPair?) {
-            this.parent = newParent
-        }
-
-        override fun magnitude(): Long {
-            return value.toLong()
-        }
-
-        override fun toString(): String {
-            return value.toString()
-        }
-
-        override fun copy(): SnailFish {
-            return SnailLiteral(value)
-        }
     }
 
     override fun run(part2: Boolean): Any {
-        val input =
-            readInputLines("18.txt").map { SnailFish.parse(it.toList()).also { it.populate(null) }.reduced() }
+        val input = readInputLines("18.txt")
+            .map { (SnailFish.parse(it) as SnailPair).apply(SnailPair::initParent) }
 
-        return if (part2) {
-            var counter = 1
-            var max = Long.MIN_VALUE
-            for (i in input.indices) {
-                for (j in input.indices) {
-                    if (i == j) {
-                        continue
-                    }
-                    val first = input[i].copy().also { it.populate(null) }
-                    val second = input[j].copy().also { it.populate(null) }
-                    max = max(max, first.add(second).magnitude())
-                }
-            }
-            max
-        } else input.reduce { acc, snailFish -> acc.add(snailFish) }.magnitude()
+        return if (part2) input.maxOf { first ->
+            input.filter { it !== first }.maxOf { second -> (first.copy() + second.copy()).magnitude() }
+        } else input.reduce(SnailPair::plus).magnitude()
     }
 }
 
 fun main() {
-    print(Day18().run(part2 = true))
+    print(Snails().run(part2 = true))
 }
