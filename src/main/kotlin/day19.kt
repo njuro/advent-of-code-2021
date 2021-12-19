@@ -1,27 +1,20 @@
 import utils.readInputBlock
 import kotlin.math.abs
 
+private typealias PointTransformation = (Day19.Point) -> Day19.Point
+
 /** [https://adventofcode.com/2021/day/19] */
 class Day19 : AdventOfCodeTask {
 
-    private val transformations: Set<(Point) -> Point> = setOf(
+    private val rotations: Set<PointTransformation> = setOf(
         { (x, y, z) -> Point(x, y, z) }, { (x, y, z) -> Point(-x, y, z) }, { (x, y, z) -> Point(x, -y, z) },
         { (x, y, z) -> Point(x, y, -z) }, { (x, y, z) -> Point(-x, -y, z) }, { (x, y, z) -> Point(x, -y, -z) },
-        { (x, y, z) -> Point(-x, y, -z) }, { (x, y, z) -> Point(-x, -y, -z) }, { (x, y, z) -> Point(x, z, y) },
-        { (x, y, z) -> Point(-x, z, y) }, { (x, y, z) -> Point(x, -z, y) }, { (x, y, z) -> Point(x, z, -y) },
-        { (x, y, z) -> Point(-x, -z, y) }, { (x, y, z) -> Point(x, -z, -y) }, { (x, y, z) -> Point(-x, z, -y) },
-        { (x, y, z) -> Point(-x, -z, -y) }, { (x, y, z) -> Point(y, x, z) }, { (x, y, z) -> Point(-y, x, z) },
-        { (x, y, z) -> Point(y, -x, z) }, { (x, y, z) -> Point(y, x, -z) }, { (x, y, z) -> Point(-y, -x, z) },
-        { (x, y, z) -> Point(y, -x, -z) }, { (x, y, z) -> Point(-y, x, -z) }, { (x, y, z) -> Point(-y, -x, -z) },
-        { (x, y, z) -> Point(y, z, x) }, { (x, y, z) -> Point(-y, z, x) }, { (x, y, z) -> Point(y, -z, x) },
-        { (x, y, z) -> Point(y, z, -x) }, { (x, y, z) -> Point(-y, -z, x) }, { (x, y, z) -> Point(y, -z, -x) },
-        { (x, y, z) -> Point(-y, z, -x) }, { (x, y, z) -> Point(-y, -z, -x) }, { (x, y, z) -> Point(z, x, y) },
-        { (x, y, z) -> Point(-z, x, y) }, { (x, y, z) -> Point(z, -x, y) }, { (x, y, z) -> Point(z, x, -y) },
-        { (x, y, z) -> Point(-z, -x, y) }, { (x, y, z) -> Point(z, -x, -y) }, { (x, y, z) -> Point(-z, x, -y) },
-        { (x, y, z) -> Point(-z, -x, -y) }, { (x, y, z) -> Point(z, y, x) }, { (x, y, z) -> Point(-z, y, x) },
-        { (x, y, z) -> Point(z, -y, x) }, { (x, y, z) -> Point(z, y, -x) }, { (x, y, z) -> Point(-z, -y, x) },
-        { (x, y, z) -> Point(z, -y, -x) }, { (x, y, z) -> Point(-z, y, -x) }, { (x, y, z) -> Point(-z, -y, -x) }
-    )
+        { (x, y, z) -> Point(-x, y, -z) }, { (x, y, z) -> Point(-x, -y, -z) })
+    private val flips: Set<PointTransformation> = setOf(
+        { (x, y, z) -> Point(x, y, z) }, { (x, y, z) -> Point(x, z, y) }, { (x, y, z) -> Point(y, x, z) },
+        { (x, y, z) -> Point(y, z, x) }, { (x, y, z) -> Point(z, x, y) }, { (x, y, z) -> Point(z, y, x) })
+    private val transformations =
+        flips.flatMap { f -> rotations.map<PointTransformation, PointTransformation> { r -> { point -> r(f(point)) } } }
 
     data class Point(val x: Int, val y: Int, val z: Int) {
         operator fun plus(other: Point) = Point(x + other.x, y + other.y, z + other.z)
