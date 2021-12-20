@@ -9,15 +9,15 @@ class Pixels : AdventOfCodeTask {
             row.mapIndexed { x, c -> Coordinate(x, y) to c }
         }.toMap().toMutableMap().withDefault { default }
 
+        fun List<Char>.enhanced() = encoding[map { if (it == '#') '1' else '0' }.joinToString("").toInt(2)]
+
         fun Coordinate.neighbours() = listOf(
             copy(x = x - 1, y = y - 1), copy(y = y - 1), copy(x = x + 1, y = y - 1),
             copy(x = x - 1), this, copy(x = x + 1),
             copy(x = x - 1, y = y + 1), copy(y = y + 1), copy(x = x + 1, y = y + 1)
         )
 
-        fun Coordinate.enhanced() = encoding[
-                neighbours().map { if (image.getValue(it) == '#') '1' else '0' }.joinToString("").toInt(2)
-        ]
+        fun Coordinate.enhanced() = neighbours().map { image.getValue(it) }.enhanced()
 
         repeat(if (part2) 50 else 2) {
             val updated = mutableMapOf<Coordinate, Char>()
@@ -27,7 +27,7 @@ class Pixels : AdventOfCodeTask {
                     updated[position] = position.enhanced()
                 }
             }
-            default = if (default == '.') '#' else '.'
+            default = List(9) { default }.enhanced()
             image = updated.withDefault { default }
         }
 
