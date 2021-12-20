@@ -104,7 +104,12 @@ class AdventOfCodeTasksTest {
 
     @Test
     fun day19() {
-        runTaskTest(Day19(), 330, 9634)
+        runTaskTest(Scanners(), 330, 9634)
+    }
+
+    @Test
+    fun day20() {
+        runTaskTest(Pixels(), 5065, 14790)
     }
 
     private fun runTaskTest(task: AdventOfCodeTask, part1Result: Any, part2Result: Any) {

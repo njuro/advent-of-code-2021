@@ -1,10 +1,10 @@
 import utils.readInputBlock
 import kotlin.math.abs
 
-private typealias PointTransformation = (Day19.Point) -> Day19.Point
+private typealias PointTransformation = (Scanners.Point) -> Scanners.Point
 
 /** [https://adventofcode.com/2021/day/19] */
-class Day19 : AdventOfCodeTask {
+class Scanners : AdventOfCodeTask {
 
     private val rotations: Set<PointTransformation> = setOf(
         { (x, y, z) -> Point(x, y, z) }, { (x, y, z) -> Point(-x, y, z) }, { (x, y, z) -> Point(x, -y, z) },
@@ -60,5 +60,5 @@ class Day19 : AdventOfCodeTask {
 }
 
 fun main() {
-    print(Day19().run(part2 = false))
+    print(Scanners().run(part2 = false))
 }
