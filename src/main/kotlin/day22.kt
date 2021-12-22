@@ -7,7 +7,7 @@ import kotlin.math.min
 class Cubes : AdventOfCodeTask {
     data class Cuboid(val xRange: IntRange, val yRange: IntRange, val zRange: IntRange, val positive: Boolean) {
         companion object {
-            private val smallRange: IntRange = -50..50
+            private val smallRange = -50..50
             private fun IntRange.small() = first in smallRange && last in smallRange
             private fun IntRange.size() = abs(last - first) + 1L
             private infix fun IntRange.intersects(other: IntRange) = first in other || other.first in this
@@ -16,7 +16,7 @@ class Cubes : AdventOfCodeTask {
         val small = xRange.small() && yRange.small() && zRange.small()
         val volume = (xRange.size() * yRange.size() * zRange.size()).let { if (positive) it else it * -1 }
 
-        private fun intersects(other: Cuboid) =
+        private infix fun intersects(other: Cuboid) =
             xRange intersects other.xRange && yRange intersects other.yRange && zRange intersects other.zRange
 
         fun intersect(other: Cuboid): Cuboid? {
@@ -39,7 +39,7 @@ class Cubes : AdventOfCodeTask {
                 command == "on"
             )
         }.filter { part2 || it.small }.fold(emptyList<Cuboid>()) { cuboids, cuboid ->
-            cuboids + cuboids.mapNotNull { cuboid.intersect(it) }.let { if (cuboid.positive) it + cuboid else it }
+            cuboids + cuboids.mapNotNull(cuboid::intersect).let { if (cuboid.positive) it + cuboid else it }
         }.sumOf(Cuboid::volume)
     }
 }
